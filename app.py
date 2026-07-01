@@ -11,10 +11,6 @@ DARK = {
     "entry_fg": "#000000",
     "list_bg": "#111111",
     "list_fg": "#FFFFFF",
-    "btn_add_bg": "#EEEEEE",
-    "btn_add_fg": "#000000",
-    "btn_del_bg": "#E74C3C",
-    "btn_del_fg": "#FFFFFF",
     "accent": "#D4AF37",
     "counter_fg": "#888888",
     "toggle_bg": "#222222",
@@ -29,10 +25,6 @@ LIGHT = {
     "entry_fg": "#000000",
     "list_bg": "#FFFFFF",
     "list_fg": "#000000",
-    "btn_add_bg": "#000000",
-    "btn_add_fg": "#FFFFFF",
-    "btn_del_bg": "#E74C3C",
-    "btn_del_fg": "#FFFFFF",
     "accent": "#D4AF37",
     "counter_fg": "#555555",
     "toggle_bg": "#DDDDDD",
@@ -41,11 +33,60 @@ LIGHT = {
 }
 
 
+def make_button(parent, text, color, text_color, command, width=120):
+    # using canvas as fake button - only way to force colour on macOS
+    canvas = tk.Canvas(
+        parent,
+        width=width,
+        height=36,
+        bg=color,
+        highlightthickness=0,
+        cursor="hand2"
+    )
+    # tag the text so we can update it on hover
+    text_id = canvas.create_text(
+        width // 2,
+        18,
+        text=text,
+        fill=text_color,
+        font=("Arial", 12, "bold"),
+        tags="btn_text"
+    )
+
+    # hover and click effects
+    def on_enter(e):
+        canvas.configure(bg=darken(color))
+
+    def on_leave(e):
+        canvas.configure(bg=color)
+
+    def on_click(e):
+        command()
+
+    canvas.bind("<Enter>", on_enter)
+    canvas.bind("<Leave>", on_leave)
+    canvas.bind("<Button-1>", on_click)
+    # also bind clicks on the text itself
+    canvas.tag_bind("btn_text", "<Button-1>", on_click)
+
+    return canvas
+
+
+def darken(hex_color):
+    # darken a hex color by 20% for hover effect
+    hex_color = hex_color.lstrip("#")
+    r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    r = max(0, int(r * 0.8))
+    g = max(0, int(g * 0.8))
+    b = max(0, int(b * 0.8))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 class ToDoApp:
     def __init__(self, root):
         self.root = root
         self.root.title("To Do App")
-        self.root.geometry("450x700")
+        self.root.geometry("480x720")
 
         # start in dark mode
         self.is_dark = True
@@ -59,24 +100,20 @@ class ToDoApp:
 
         self.root.configure(bg=t["bg"])
 
-        # clear existing widgets when rebuilding for theme switch
+        # clear existing widgets when rebuilding
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        # toggle button top right
-        self.toggle_btn = tk.Button(
+        # toggle button top right using canvas
+        toggle_canvas = make_button(
             self.root,
             text=t["toggle_text"],
+            color=t["toggle_bg"],
+            text_color=t["toggle_fg"],
             command=self.toggle_theme,
-            font=("Arial", 10),
-            bg=t["toggle_bg"],
-            fg=t["toggle_fg"],
-            borderwidth=0,
-            padx=10,
-            pady=5,
-            cursor="hand2"
+            width=130
         )
-        self.toggle_btn.pack(anchor="ne", padx=15, pady=10)
+        toggle_canvas.pack(anchor="ne", padx=15, pady=10)
 
         # title
         tk.Label(
@@ -94,11 +131,12 @@ class ToDoApp:
             bg=t["entry_bg"],
             fg=t["entry_fg"],
             borderwidth=0,
+            highlightthickness=0,
             justify="center"
         )
         self.task_entry.pack(pady=10, padx=30, fill=tk.X)
 
-        # enter key shortcut to add task
+        # enter key shortcut
         self.task_entry.bind('<Return>', lambda e: self.add_task())
 
         # priority selector
@@ -132,49 +170,37 @@ class ToDoApp:
                 font=("Arial", 11)
             ).pack(side=tk.LEFT, padx=5)
 
-        # buttons
+        # buttons using canvas for macOS colour fix
         btn_frame = tk.Frame(self.root, bg=t["bg"])
         btn_frame.pack(pady=15)
 
-        tk.Button(
+        make_button(
             btn_frame,
             text="ADD TASK",
+            color="#EEEEEE",
+            text_color="#000000",
             command=self.add_task,
-            font=("Arial", 12, "bold"),
-            bg=t["btn_add_bg"],
-            fg=t["btn_add_fg"],
-            width=12,
-            height=1,
-            cursor="hand2",
-            borderwidth=0
-        ).pack(side=tk.LEFT, padx=10)
+            width=120
+        ).pack(side=tk.LEFT, padx=8)
 
-        # delete button always red so it's visible in both dark and light
-        tk.Button(
+        # delete always red - canvas forces colour on macOS
+        make_button(
             btn_frame,
             text="DELETE",
+            color="#E74C3C",
+            text_color="#FFFFFF",
             command=self.delete_task,
-            font=("Arial", 12, "bold"),
-            bg=t["btn_del_bg"],
-            fg=t["btn_del_fg"],
-            width=12,
-            height=1,
-            cursor="hand2",
-            borderwidth=0
-        ).pack(side=tk.LEFT, padx=10)
+            width=120
+        ).pack(side=tk.LEFT, padx=8)
 
-        tk.Button(
+        make_button(
             btn_frame,
             text="✓ DONE",
+            color="#D4AF37",
+            text_color="#000000",
             command=self.mark_complete,
-            font=("Arial", 12, "bold"),
-            bg=t["accent"],
-            fg="#000000",
-            width=12,
-            height=1,
-            cursor="hand2",
-            borderwidth=0
-        ).pack(side=tk.LEFT, padx=10)
+            width=120
+        ).pack(side=tk.LEFT, padx=8)
 
         # task listbox
         self.tasks_list = tk.Listbox(
@@ -190,7 +216,7 @@ class ToDoApp:
         )
         self.tasks_list.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
-        # task counter at bottom
+        # task counter
         self.counter_label = tk.Label(
             self.root,
             text="0 tasks",
@@ -210,17 +236,10 @@ class ToDoApp:
         ).pack(pady=5)
 
     def toggle_theme(self):
-        # switch between dark and light
         self.is_dark = not self.is_dark
         self.theme = DARK if self.is_dark else LIGHT
-
-        # save current tasks before rebuilding
         current_tasks = list(self.tasks_list.get(0, tk.END))
-
-        # rebuild UI with new theme
         self.build_ui()
-
-        # restore tasks after rebuild
         for task in current_tasks:
             self.tasks_list.insert(tk.END, task)
         self.update_counter()
@@ -230,7 +249,6 @@ class ToDoApp:
         if task:
             self.tasks_list.insert(tk.END, f"• {task}")
             index = self.tasks_list.size() - 1
-            # colour code by priority
             colors = {
                 "high": "#E74C3C",
                 "medium": "#F39C12",
@@ -259,7 +277,6 @@ class ToDoApp:
         try:
             index = self.tasks_list.curselection()[0]
             task = self.tasks_list.get(index)
-            # strike through effect using grey color
             if not task.startswith("✓"):
                 self.tasks_list.delete(index)
                 self.tasks_list.insert(index, f"✓ {task}")
