@@ -13,7 +13,7 @@ DARK = {
     "list_fg": "#FFFFFF",
     "btn_add_bg": "#EEEEEE",
     "btn_add_fg": "#000000",
-    "btn_del_bg": "#000000",
+    "btn_del_bg": "#E74C3C",
     "btn_del_fg": "#FFFFFF",
     "accent": "#D4AF37",
     "counter_fg": "#888888",
@@ -40,6 +40,7 @@ LIGHT = {
     "toggle_text": "🌙 Dark Mode"
 }
 
+
 class ToDoApp:
     def __init__(self, root):
         self.root = root
@@ -58,7 +59,7 @@ class ToDoApp:
 
         self.root.configure(bg=t["bg"])
 
-        # clear existing widgets when rebuilding
+        # clear existing widgets when rebuilding for theme switch
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -97,7 +98,7 @@ class ToDoApp:
         )
         self.task_entry.pack(pady=10, padx=30, fill=tk.X)
 
-        # enter key shortcut
+        # enter key shortcut to add task
         self.task_entry.bind('<Return>', lambda e: self.add_task())
 
         # priority selector
@@ -148,6 +149,7 @@ class ToDoApp:
             borderwidth=0
         ).pack(side=tk.LEFT, padx=10)
 
+        # delete button always red so it's visible in both dark and light
         tk.Button(
             btn_frame,
             text="DELETE",
@@ -188,7 +190,7 @@ class ToDoApp:
         )
         self.tasks_list.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
-        # task counter
+        # task counter at bottom
         self.counter_label = tk.Label(
             self.root,
             text="0 tasks",
@@ -228,6 +230,7 @@ class ToDoApp:
         if task:
             self.tasks_list.insert(tk.END, f"• {task}")
             index = self.tasks_list.size() - 1
+            # colour code by priority
             colors = {
                 "high": "#E74C3C",
                 "medium": "#F39C12",
@@ -256,6 +259,7 @@ class ToDoApp:
         try:
             index = self.tasks_list.curselection()[0]
             task = self.tasks_list.get(index)
+            # strike through effect using grey color
             if not task.startswith("✓"):
                 self.tasks_list.delete(index)
                 self.tasks_list.insert(index, f"✓ {task}")
