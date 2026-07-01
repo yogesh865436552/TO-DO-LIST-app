@@ -13,3 +13,5 @@ def load_tasks():
 def save_tasks(tasks):
     with open(DATA_FILE, "w") as f:
         json.dump(list(tasks), f)
+
+    
