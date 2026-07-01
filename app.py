@@ -28,6 +28,9 @@ class ToDoApp:
         )
         self.task_entry.pack(pady=10, padx=30, fill=tk.X)
 
+        # enter key shortcut - faster than clicking button every time
+        self.task_entry.bind('<Return>', lambda e: self.add_task())
+
         btn_frame = tk.Frame(root, bg="#000000")
         btn_frame.pack(pady=15)
 
@@ -64,7 +67,16 @@ class ToDoApp:
         )
         self.tasks_list.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
 
-        # load saved tasks on startup
+        # shows task count at bottom
+        self.counter_label = tk.Label(
+            root,
+            text="0 tasks",
+            font=("Arial", 11),
+            bg="#000000",
+            fg="#888888"
+        )
+        self.counter_label.pack(pady=5)
+
         self.load_tasks()
 
     def add_task(self):
@@ -73,6 +85,7 @@ class ToDoApp:
             self.tasks_list.insert(tk.END, f"• {task}")
             self.task_entry.delete(0, tk.END)
             self.save_tasks()
+            self.update_counter()
         else:
             messagebox.showwarning("Alert", "Entry cannot be empty.")
 
@@ -81,8 +94,15 @@ class ToDoApp:
             index = self.tasks_list.curselection()[0]
             self.tasks_list.delete(index)
             self.save_tasks()
+            self.update_counter()
         except IndexError:
             messagebox.showwarning("Alert", "Please select a task to delete.")
+
+    def update_counter(self):
+        count = self.tasks_list.size()
+        self.counter_label.config(
+            text=f"{count} task{'s' if count != 1 else ''}"
+        )
 
     def save_tasks(self):
         save_tasks_to_file(self.tasks_list.get(0, tk.END))
@@ -90,6 +110,7 @@ class ToDoApp:
     def load_tasks(self):
         for task in load_tasks_from_file():
             self.tasks_list.insert(tk.END, task)
+        self.update_counter()
 
 if __name__ == "__main__":
     root = tk.Tk()
