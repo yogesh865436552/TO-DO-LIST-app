@@ -45,7 +45,14 @@ class ToDoApp:
             self.tasks_list.delete(index)
         except IndexError:
             messagebox.showwarning("Alert", "Please select a task to delete.")
-
+    
+    def save_tasks(self):
+        save_tasks_to_file(self.tasks_list.get(0, tk.END))
+        
+    def load_tasks(Self):
+        for task in load_tasks_from_file():
+            self.tasks_list.insert(tk.END, task)
+ 
 if __name__ == "__main__":
     root = tk.Tk()
     app = ToDoApp(root)
